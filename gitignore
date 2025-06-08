@@ -1,0 +1,10 @@
+# SLURM output and error files
+*.out
+*.err
+
+# Job-specific logs or temp files
+tmp/
+*.tmp
+
+# Environment artifacts
+.env
