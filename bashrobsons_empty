@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH --job-name=robsons
+#SBATCH --nodes=1
+#SBATCH --ntasks=1          # single MPI task
+#SBATCH --cpus-per-task=32 # tblite is OpenMP-parallel
+#SBATCH --mem=100G
+#SBATCH --time=12:00:00
+#SBATCH --output=robsons_%j.out
+
+source /gpfs/helios/home/balong/miniconda3/etc/profile.d/conda.sh
+conda activate robsons
+
+export ROBSON_WORKERS=32
+export OMP_NUM_THREADS_PER_WORKER=1
+
+# Optional: limit tblite threads to the cpus-per-task SLURM gives us
+export OMP_NUM_THREADS=${OMP_NUM_THREADS_PER_WORKER}
+
+# Run
+python3 generate_robsons_empty.py
