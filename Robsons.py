@@ -95,123 +95,103 @@ def _mol_path(fname: str) -> str:
 
 
 # ----------------------------------------------------------------------
-# Frame fragments  (F1 – F9)
+# Frame fragments  (A1 – A6)
 # ----------------------------------------------------------------------
 
-F1 = read(_mol_path('F1.mol'))
-del F1[12], F1[3], F1[2], F1[1], F1[0]
-replace_H_with_CH3(F1, h_index=10)
-F1.translate(-F1.get_center_of_mass())
+A1 = read(_mol_path('A1.mol'))
+del A1[12], A1[3], A1[2], A1[1], A1[0]
+replace_H_with_CH3(A1, h_index=10)
+A1.translate(-A1.get_center_of_mass())
 
-F2 = read(_mol_path('F2.mol'))
-del F2[12], F2[3], F2[2], F2[1], F2[0]
-F2.translate(-F2.get_center_of_mass())
+A2 = read(_mol_path('A2.mol'))
+del A2[12], A2[3], A2[2], A2[1], A2[0]
+A2.translate(-A2.get_center_of_mass())
 
-F3 = read(_mol_path('F3.mol'))
-F3.rotate(180,'z')
-del F3[9], F3[2], F3[1]
-F3.translate(-F3.get_center_of_mass())
+A4 = read(_mol_path('A4.mol'))
+A4.rotate(180,'z')
+del A4[13], A4[4], A4[3], A4[2], A4[1]
+A4.translate(-A4.get_center_of_mass())
 
-F4 = read(_mol_path('F4.mol'))
-F4.rotate(180,'z')
-del F4[13], F4[4], F4[3], F4[2], F4[1]
-F4.translate(-F4.get_center_of_mass())
+A5 = read(_mol_path('A5.mol'))
+A5.rotate(180,'z')
+del A5[13], A5[4], A5[3], A5[2], A5[1]
+A5.translate(-A5.get_center_of_mass())
 
-F5 = read(_mol_path('F5.mol'))
-F5.rotate(180,'z')
-del F5[13], F5[4], F5[3], F5[2], F5[1]
-F5.translate(-F5.get_center_of_mass())
+A6 = read(_mol_path('A6.mol'))
+A6.rotate(180,'z')
+del A6[13], A6[4], A6[3], A6[2], A6[1]
+change_symbol_and_adjust_bond(A6, i=0, new_symbol='I', j=6)
+A6.translate(-A6.get_center_of_mass())
 
-F6 = read(_mol_path('F6.mol'))
-F6.rotate(180,'z')
-del F6[13], F6[4], F6[3], F6[2], F6[1]
-change_symbol_and_adjust_bond(F6, i=0, new_symbol='I', j=6)
-F6.translate(-F6.get_center_of_mass())
-
-_FRAMES: List[Atoms] = [F1, F2, F3, F4, F5, F6]
+_FRAMES: List[Atoms] = [A1, A2, A4, A5, A6]
 
 # ----------------------------------------------------------------------
-# Spacer fragments  (S1 – S13)
+# Spacer fragments  (B1 – B13)
 # ----------------------------------------------------------------------
 
-S1 = read(_mol_path('S1.mol'))
-S1.rotate(180,'z')
-del S1[7], S1[6]
-S1.translate(-S1.get_center_of_mass())
+B1 = read(_mol_path('B1.mol'))
+B1.rotate(180,'z')
+del B1[7], B1[6]
+B1.translate(-B1.get_center_of_mass())
 
-S2 = read(_mol_path('S2.mol'))
-S2.rotate(90,'z')
-del S2[13], S2[11]
-S2.translate(-S2.get_center_of_mass())
+B2 = read(_mol_path('B2.mol'))
+B2.rotate(90,'z')
+del B2[13], B2[11]
+B2.translate(-B2.get_center_of_mass())
 
-S3 = read(_mol_path('S3.mol'))
-S3.rotate(180,'z')
-del S3[11], S3[10]
-S3.translate(-S3.get_center_of_mass())
+B3 = read(_mol_path('B3.mol'))
+B3.rotate(180,'z')
+del B3[11], B3[10]
+B3.translate(-B3.get_center_of_mass())
 
-# S4: ethane, eclipsed
+# B4: ethane, eclipsed
 _eth=Chem.MolFromSmiles('CC');_eth=Chem.AddHs(_eth)
 AllChem.EmbedMolecule(_eth,randomSeed=42)
 conf=_eth.GetConformer()
 for h_idx,partner in zip([2,3,4],[5,6,7]): rdMolTransforms.SetDihedralDeg(conf,h_idx,0,1,partner,0)
-S4=Atoms(symbols=[a.GetSymbol() for a in _eth.GetAtoms()],positions=conf.GetPositions())
-S4.rotate(-90,'z')
-del S4[6], S4[3]
-S4.translate(-S4.get_center_of_mass())
+B4=Atoms(symbols=[a.GetSymbol() for a in _eth.GetAtoms()],positions=conf.GetPositions())
+B4.rotate(-90,'z')
+del B4[6], B4[3]
+B4.translate(-B4.get_center_of_mass())
 
-S5=read(_mol_path('S5.mol'))
-S5.rotate(-90,'z')
-del S5[4], S5[3]
-S5.translate(-S5.get_center_of_mass())
+B5=read(_mol_path('B5.mol'))
+B5.rotate(-90,'z')
+del B5[4], B5[3]
+B5.translate(-B5.get_center_of_mass())
 
-S6=read(_mol_path('S6.mol'))
-S6.rotate(-90,'z')
-S6.rotate(-90,'y')
-del S6[10], S6[6]
-S6.translate(-S6.get_center_of_mass())
+B6=read(_mol_path('B6.mol'))
+B6.rotate(-90,'z')
+B6.rotate(-90,'y')
+del B6[10], B6[6]
+B6.translate(-B6.get_center_of_mass())
 
-S7=read(_mol_path('S7.mol'))
-S7.rotate(-90,'z')
-S7.rotate(180,'y')
-del S7[8], S7[4]
-S7.translate(-S7.get_center_of_mass())
+B7=read(_mol_path('B7.mol'))
+B7.rotate(-90,'z')
+B7.rotate(180,'y')
+del B7[8], B7[4]
+B7.translate(-B7.get_center_of_mass())
 
-S8=read(_mol_path('S8.mol'))
-S8.rotate(-90,'z')
-del S8[16], S8[15]
-S8.translate(-S8.get_center_of_mass())
+B8=read(_mol_path('B8.mol'))
+B8.rotate(-90,'z')
+del B8[16], B8[15]
+B8.translate(-B8.get_center_of_mass())
 
-S9=read(_mol_path('S9.mol'))
-S9.rotate(-90,'z')
-del S9[16], S9[15]
-S9.translate(-S9.get_center_of_mass())
+B9=read(_mol_path('B9.mol'))
+B9.rotate(-90,'z')
+del B9[16], B9[15]
+B9.translate(-B9.get_center_of_mass())
 
-S10=read(_mol_path('S10.mol'))
-S10.rotate(-90,'z')
-del S10[15], S10[13]
-S10.translate(-S10.get_center_of_mass())
+B10=read(_mol_path('B10.mol'))
+B10.rotate(-90,'z')
+del B10[15], B10[13]
+B10.translate(-B10.get_center_of_mass())
 
-S11=read(_mol_path('S11.mol'))
-S11.rotate(-45,'z')
-del S11[17], S11[15]
-S11.translate(-S11.get_center_of_mass())
+B99 = read(_mol_path('bor.mol'))
+B99.rotate(180, "z")
+del B99[9], B99[8]
+B99.translate(-B99.get_center_of_mass())
 
-S12=read(_mol_path('S12.mol'))
-S12.rotate(-90,'z')
-del S12[30], S12[29]
-S12.translate(-S12.get_center_of_mass())
-
-S13=read(_mol_path('S13.mol'))
-S13.rotate(-90,'z')
-del S13[13], S13[12]
-S13.translate(-S13.get_center_of_mass())
-
-S99 = read(_mol_path('bor.mol'))
-S99.rotate(180, "z")
-del S99[9], S99[8]
-S99.translate(-S99.get_center_of_mass())
-
-_SPACERS: List[Atoms] = [S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S99]
+_SPACERS: List[Atoms] = [B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, B99]
 
 # ----------------------------------------------------------------------
 # Site & cage builders  (unchanged)
@@ -221,7 +201,6 @@ def create_site(*, length: float = 2.8,
                 atom_0: str = "Fe", atom_1: str = "Fe",
                 atom_2: str = "N",  atom_3: str = "N",
                 corner_atom: str = "N") -> Atoms:
-    """Return a 4‑metal / 4‑corner‑N building site template."""
     L = length
     syms = [atom_0, atom_1, atom_2, atom_3] + [corner_atom] * 4
     pos  = [
@@ -260,8 +239,8 @@ def build_Robson(site: Atoms, spacer: Atoms, frame: Atoms, *,
 
 __all__ = (
     # fragments
-    *[f"F{i}" for i in range(1, 10)],
-    *[f"S{i}" for i in range(1, 14)],
+    *[f"A{i}" for i in range(1, 10)],
+    *[f"B{i}" for i in range(1, 14)],
     # utilities
     "create_site", "build_Robson",
 )
