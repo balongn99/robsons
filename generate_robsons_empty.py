@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 from __future__ import annotations
 import importlib, os, time
 from typing import Dict, List, Tuple, Sequence, Optional
@@ -46,10 +47,10 @@ def constrain_xy(self):
 Atoms.constrain_xy = constrain_xy  # monkey-patch
 
 # ──────────────────────────────────────────────────────────────────────
-# 2.  Spin helpers
+# 2.  Spin helpers  (exactly ONE spin per oxidation state)
 # ──────────────────────────────────────────────────────────────────────
 def load_spin_data(module: str = "Spin") -> Dict[Tuple[str, int], List[float]]:
-    """Load {(element, ox_state): [S₁, S₂, …]} either from spin_dict or df."""
+    """Load {(element, ox_state): [S]} either from spin_dict or df."""
     spin = importlib.import_module(module)
     if hasattr(spin, "spin_dict"):
         raw: Dict[Tuple[str, int], Sequence[float]] = spin.spin_dict
@@ -60,6 +61,7 @@ def load_spin_data(module: str = "Spin") -> Dict[Tuple[str, int], List[float]]:
         df = spin.df
     else:
         raise AttributeError("Spin.py must define either `spin_dict` or `df`")
+    # Ensure each value is a list (len == 1)
     return {(r.Element, int(r.Oxidation)): list(map(float, r.Spins))
             for _, r in df.iterrows()}
 
@@ -92,16 +94,14 @@ def optimise(atoms: Atoms, *, charge: int, multiplicity: int,
 # 5.  Worker process
 # ──────────────────────────────────────────────────────────────────────
 def _build_name(sym1: str, ch1: int, sym2: str, ch2: int,
-                frame_key: str, spacer_key: str, tag: str) -> str:
-    """Return string **without** any corner segment."""
-    tag_part = f"-{tag.lstrip('_')}" if tag else ""
+                frame_key: str, spacer_key: str) -> str:
+    """Return string with constant NNNN suffix (no tag)."""
     return (f"RMC-{sym1}_{ch1}-{sym2}_{ch2}-"
-            f"{frame_key}-{spacer_key}-NNNN{tag_part}")
+            f"{frame_key}-{spacer_key}-NNNN")
 
 def worker(args) -> Optional[Tuple[str, float, int, Atoms,
                                    float, float, int]]:
-    (m1, m2, frame_key, spacer_key,
-     S1_ref, S2_ref, tag) = args
+    (m1, m2, frame_key, spacer_key, S1_ref, S2_ref) = args
 
     sym1, ch1 = m1
     sym2, ch2 = m2
@@ -115,8 +115,7 @@ def worker(args) -> Optional[Tuple[str, float, int, Atoms,
     frame_fragment  = getattr(rob, frame_key)
     spacer_fragment = getattr(rob, spacer_key)
 
-    base_name = _build_name(sym1, ch1, sym2, ch2,
-                            frame_key, spacer_key, tag)
+    base_name = _build_name(sym1, ch1, sym2, ch2, frame_key, spacer_key)
 
     # ── Build initial structure (no shared corners) ───────────────────
     site = rob.create_site(atom_0=sym1, atom_1=sym2)  # only two metals
@@ -125,7 +124,7 @@ def worker(args) -> Optional[Tuple[str, float, int, Atoms,
                             frame_fragment.copy(),
                             x=6.0, y=5.0)
 
-    multiplicities = sorted({int(2*S+1) for S in total_S_set(S1_ref, S2_ref)})
+    multiplicities = sorted({int(2*S + 1) for S in total_S_set(S1_ref, S2_ref)})
     total_charge   = int(ch1 + ch2)      # no corner charge
 
     best_energy = best_mult = best_mol = None
@@ -143,7 +142,7 @@ def worker(args) -> Optional[Tuple[str, float, int, Atoms,
         if best_energy is None or E < best_energy:
             best_energy, best_mult, best_mol = E, mult, trial.copy()
 
-    if best_mult is None: 
+    if best_mult is None:
         return None
 
     return (base_name, best_energy, best_mult, best_mol,
@@ -160,31 +159,25 @@ def main(db_path: str = "robsonscatalyst.db") -> None:
     db       = connect(db_path)
     existing = {row.name for row in db.select()}
 
-    # 2) Build raw task list (no corner dimension)
-    raw_tasks: List[Tuple] = []
+    # 2) Build task list
+    tasks: List[Tuple] = []
     for (m1, m2), (frame_key, spacer_key) in product(
             combinations_with_replacement(metals, 2),
             product(FRAME_KEYS, SPACER_KEYS)):
-        s1_low, s1_high = min(spin_dict[m1]), max(spin_dict[m1])
-        s2_low, s2_high = min(spin_dict[m2]), max(spin_dict[m2])
+        S1 = float(spin_dict[m1][0])  # exactly one spin per state
+        S2 = float(spin_dict[m2][0])
+        tasks.append((m1, m2, frame_key, spacer_key, S1, S2))
 
-        tag_low = "_low" if (s1_low != s1_high or s2_low != s2_high) else ""
-        raw_tasks.append((m1, m2, frame_key, spacer_key,
-                          s1_low, s2_low, tag_low))
-        if (s1_low != s1_high) or (s2_low != s2_high):
-            raw_tasks.append((m1, m2, frame_key, spacer_key,
-                              s1_high, s2_high, "_high"))
-
-    # 3) Filter tasks not yet in DB
+    # Remove tasks already in DB
     def _name_from_tuple(t: Tuple) -> str:
-        (m1, m2, frame_key, spacer_key, _, _, tag) = t
+        (m1, m2, frame_key, spacer_key, _, _) = t
         return _build_name(m1[0], m1[1], m2[0], m2[1],
-                           frame_key, spacer_key, tag)
+                           frame_key, spacer_key)
 
-    tasks = [t for t in raw_tasks if _name_from_tuple(t) not in existing]
+    tasks = [t for t in tasks if _name_from_tuple(t) not in existing]
 
     max_workers = int(os.getenv("ROBSON_WORKERS", "1"))
-    print(f"Running with {max_workers} worker process(es)…", flush=True)
+    print(f"Running with {max_workers} worker process(es)… ({len(tasks)} to do)", flush=True)
 
     t0, done = time.time(), 0
     with ProcessPoolExecutor(max_workers=max_workers) as pool:
@@ -193,7 +186,8 @@ def main(db_path: str = "robsonscatalyst.db") -> None:
             try:
                 result = fut.result()
             except Exception:
-                print("‼ Worker crashed for", futures[fut][:5], format_exc(), flush=True)
+                print("‼ Worker crashed for", _name_from_tuple(futures[fut]),
+                      format_exc(), flush=True)
                 continue
             if result is None:
                 continue
@@ -222,6 +216,9 @@ def main(db_path: str = "robsonscatalyst.db") -> None:
             done += 1
             print(f"✔ {done}/{len(tasks)}  {name}  mult={mult}  "
                   f"E={E:.2f} eV  ({(time.time()-t0)/60:.1f} min)", flush=True)
+
+    print(f"Finished: {done} new structures written "
+          f"({(time.time()-t0)/60:.1f} min total)")
 
 if __name__ == "__main__":
     main()

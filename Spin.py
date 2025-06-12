@@ -37,12 +37,11 @@ def d_electrons(sym: str, charge: int) -> int:
     return max(0, d_e - lost_d)
 
 def all_S(dn: int):
-    max_unpaired = dn if dn <= 5 else 10 - dn
-    max_S = max_unpaired / 2
-    if dn % 2 == 0:
-        return [s for s in range(int(max_S) + 1)]
-    else:
-        return [0.5 + i for i in range(int(max_S) + 1)]
+    if dn % 2:          # odd dn
+        return [0.5]
+    if dn == 2:         # special for square planar
+        return [1]
+    return [0]          # all other even dn
 
 IONS = {
     # s-block
@@ -57,36 +56,36 @@ IONS = {
     "Fe": [2, 3],
     "Co": [2, 3],
     "Ni": [2, 3],
-    "Cu": [1, 2, 3],
+    "Cu": [1, 2],
     "Zn": [2],
 
     # 4d-block
     "Y":  [3],
-    "Zr": [2, 3],
+    "Zr": [2],
     "Nb": [3],
-    "Mo": [2, 3],
+    "Mo": [2],
     "Ru": [2, 3],
     "Rh": [2, 3],
-    "Pd": [2, 3],
+    "Pd": [2],
     "Ag": [1, 2],
     "Cd": [2],
 
     # 5d-block
-    "Hf": [3],
-    "Ta": [2, 3],
-    "W":  [2, 3],
+    "Hf": [2],
+    "Ta": [3],
+    "W":  [2],
     "Re": [2, 3],
-    "Os": [3],
-    "Ir": [1, 3],
-    "Pt": [2, 3],
-    "Au": [1, 3],
-    "Hg": [1, 2],
+    "Os": [2, 3],
+    "Ir": [2, 3],
+    "Pt": [2],
+    "Au": [3],
+    "Hg": [2],
 
     # p-block
-    "Ga": [1, 3],
+    "Ga": [3],
     "In": [1, 3],
-    "Sn": [2, 3],
-    "Pb": [2, 3],
+    "Sn": [2],
+    "Pb": [2],
     "Bi": [3],
 }
 
