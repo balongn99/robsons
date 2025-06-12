@@ -159,7 +159,7 @@ def worker(args) -> Optional[Tuple[str, float, int, Atoms,
 # ──────────────────────────────────────────────────────────────────────
 # 6.  Main driver
 # ──────────────────────────────────────────────────────────────────────
-def main(db_path: str = "balongtest.db") -> None:
+def main(db_path: str = "robsonscatalyst.db") -> None:
     spin_dict = load_spin_data()
     metals    = list(spin_dict.keys())
 
