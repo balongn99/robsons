@@ -4,7 +4,7 @@
 #SBATCH --ntasks=1          # single MPI task
 #SBATCH --cpus-per-task=32 # tblite is OpenMP-parallel
 #SBATCH --mem=100G
-#SBATCH --time=12:00:00
+#SBATCH --time=168:00:00
 #SBATCH --output=robsons_%j.out
 
 source /gpfs/helios/home/balong/miniconda3/etc/profile.d/conda.sh
