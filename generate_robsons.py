@@ -1,243 +1,224 @@
 #!/usr/bin/env python3
+"""Robson-cage generator
 
+* Enumerates every metal/acid/base/bridge combination.
+* Tries all reasonable multiplicities derived from the two metal spins.
+* **Always** writes the lowest-energy geometry to the database.
+    – adds a `<tag>.ok` sentinel when the optimiser **converged** (|F|max ≤ 0.01 eV/Å within 50 steps)
+    – adds a `<tag>.fail` sentinel when no multiplicity converged, but the
+      lowest-energy (non-converged) structure is still stored for inspection.
+"""
 from __future__ import annotations
+
 import importlib
 import os
 import time
-from typing import Dict, List, Tuple, Sequence, Optional
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from traceback import format_exc
 from itertools import combinations_with_replacement, product
+from traceback import format_exc
+from typing import Dict, List, Optional, Sequence, Tuple
 
+from pathlib import Path
 import pandas as pd
 from ase import Atoms
+from ase.constraints import FixedPlane
 from ase.db import connect
 from ase.optimize import BFGS
 from tblite.ase import TBLite
-from ase.constraints import FixedPlane
 
 # ──────────────────────────────────────────────────────────────────────
-# 0.  Fragment library (auto‑discovered)
+# 0.  Globals & fragment registry
 # ──────────────────────────────────────────────────────────────────────
+RUN_DIR = Path(os.getenv("ROBSON_LOGDIR", "robson_runs"))
+RUN_DIR.mkdir(exist_ok=True)
+
 rob = importlib.import_module("Robsons")
+if not (hasattr(rob, "_ACIDS") and hasattr(rob, "_BASES")):
+    raise RuntimeError("Robsons.py must expose _ACIDS and _BASES lists.")
 
-def _fragment_keys(prefix: str) -> List[str]:
-    """Return A* / B* keys in natural sort order (A1 < A10 < A2 …)."""
-    keys = [k for k, v in vars(rob).items()
-            if k.startswith(prefix) and isinstance(v, Atoms)]
-    return sorted(keys, key=lambda s: (len(s), s))
-
-FRAME_KEYS  = _fragment_keys("A")   # frames A*
-SPACER_KEYS = _fragment_keys("B")   # spacers B*
-
-if not FRAME_KEYS:
-    raise RuntimeError("No frame fragments (variables 'A*') found in Robsons.py!")
-if not SPACER_KEYS:
-    raise RuntimeError("No spacer fragments (variables 'B*') found in Robsons.py!")
-
-print(f"Discovered frames:  {', '.join(FRAME_KEYS)}")
-print(f"Discovered spacers: {', '.join(SPACER_KEYS)}")
+ACID_KEYS: List[str] = [k for k in rob._ACIDS if isinstance(k, str)
+                        and hasattr(rob, k) and isinstance(getattr(rob, k), Atoms)]
+BASE_KEYS: List[str] = [k for k in rob._BASES if isinstance(k, str)
+                        and hasattr(rob, k) and isinstance(getattr(rob, k), Atoms)]
+if not ACID_KEYS or not BASE_KEYS:
+    raise RuntimeError("No valid acid/base fragments found in Robsons._ACIDS/_BASES!")
+print("Fragments →  acids:  {}\nbases:   {}".format(
+      ", ".join(ACID_KEYS), ", ".join(BASE_KEYS)), flush=True)
 
 # ──────────────────────────────────────────────────────────────────────
-# 1.  Constraint helper (freeze XY plane for all atoms except the metals)
-# ──────────────────────────────────────────────────────────────────────
-
-def constrain_xy(self):
-    constraints = [FixedPlane(i, (0, 0, 1))
-                   for i in range(len(self)) if i not in (0, 1)]
-    self.set_constraint(constraints)
-
-Atoms.constrain_xy = constrain_xy  # monkey‑patch
-
-# ──────────────────────────────────────────────────────────────────────
-# 2.  Spin helpers — Spin.py now gives exactly one spin per oxidation state
+# 1.  Spin helpers (robust to dict or DataFrame formats)
 # ──────────────────────────────────────────────────────────────────────
 
 def load_spin_data(module: str = "Spin") -> Dict[Tuple[str, int], List[float]]:
-    """Return {(element, ox_state): [S]} from Spin.spin_dict or Spin.df."""
     spin = importlib.import_module(module)
     if hasattr(spin, "spin_dict"):
-        raw: Dict[Tuple[str, int], Sequence[float]] = spin.spin_dict
+        raw: Dict[Tuple[str, int], Sequence[float]] = spin.spin_dict  # type: ignore[attr-defined]
         df = pd.DataFrame({"Element": [k[0] for k in raw],
                            "Oxidation": [k[1] for k in raw],
                            "Spins": list(raw.values())})
     elif hasattr(spin, "df"):
-        df = spin.df
+        df = spin.df  # type: ignore[attr-defined]
     else:
-        raise AttributeError("Spin.py must define either 'spin_dict' or 'df'")
-    # Ensure every entry is a list (len==1)
-    return {(r.Element, int(r.Oxidation)): list(map(float, r.Spins))
-            for _, r in df.iterrows()}
+        raise AttributeError("Spin.py must expose either 'spin_dict' or 'df'.")
+
+    ox_col = "Oxidation" if "Oxidation" in df.columns else "Ox"
+    if ox_col not in df.columns:
+        raise ValueError("Spin DataFrame needs an 'Oxidation' or 'Ox' column")
+
+    def _as_list(x):
+        return list(x) if isinstance(x, (list, tuple)) else [float(x)]
+
+    return {(row.Element, int(row[ox_col])): _as_list(row.Spins)
+            for _, row in df.iterrows()}
 
 # ──────────────────────────────────────────────────────────────────────
-# 3.  Utilities
+# 2.  Bridges per acid
+# ──────────────────────────────────────────────────────────────────────
+NO_BRIDGE_ACIDS: set[str] = {"A3"}
+BRIDGE_ATOMS = ["N", "O", "S", "H"]
+_BRIDGE_CHARGE = {"O": -1, "N": -2, "S": -1, "H": 0}
+
+def bridges_for(acid_key: str):
+    return [(None, None)] if acid_key in NO_BRIDGE_ACIDS else \
+           list(combinations_with_replacement(BRIDGE_ATOMS, 2))
+
+# ──────────────────────────────────────────────────────────────────────
+# 3.  Geometry optimiser helper
+# ──────────────────────────────────────────────────────────────────────
+
+def _constrain_xy(self):
+    self.set_constraint([FixedPlane(i, (0, 0, 1)) for i, a in enumerate(self)
+                         if i not in (0, 1) and a.symbol != "H"])
+
+Atoms.constrain_xy = _constrain_xy  # type: ignore[attr-defined]
+
+
+def run_opt(atoms: Atoms, *, charge: int, mult: int,
+            traj: str, log: str, fmax: float = 0.01, steps: int = 50):
+    atoms.constrain_xy()
+    atoms.calc = TBLite(method="GFN2-xTB", accuracy=1,
+                        charge=charge, multiplicity=mult,
+                        solvation=("alpb", "water"), verbosity=0)
+    opt = BFGS(atoms, trajectory=traj, logfile=log)
+    opt.run(fmax=fmax, steps=steps)
+    return opt
+
+# ──────────────────────────────────────────────────────────────────────
+# 4.  Misc helpers
 # ──────────────────────────────────────────────────────────────────────
 
 def total_S_set(S1: float, S2: float) -> set[float]:
-    """All allowed total spin quantum numbers S = |S1−S2| … S1+S2."""
-    low, high = abs(S1 - S2), S1 + S2
-    return {round(low + i, 1) for i in range(int(high - low) + 1)}
+    lo, hi = abs(S1 - S2), S1 + S2
+    return {round(lo + i, 1) for i in range(int(hi - lo) + 1)}
+
+
+def name_tag(sym1: str, ch1: int, sym2: str, ch2: int,
+             acid: str, base: str, c1: Optional[str], c2: Optional[str]) -> str:
+    suffix = "-NNNN" if c1 is None else f"-NNNN{c1}{c2}"
+    return f"RMC-{sym1}_{ch1}-{sym2}_{ch2}-{acid}-{base}{suffix}"
 
 # ──────────────────────────────────────────────────────────────────────
-# 4.  Geometry optimisation helper (GFN2‑xTB)
+# 5.  Worker – returns best structure + convergence flag
 # ──────────────────────────────────────────────────────────────────────
 
-def optimise(atoms: Atoms, *, charge: int, multiplicity: int,
-             fmax: float = 0.01,
-             trajectory: Optional[str] = None,
-             logfile: Optional[str] = None) -> float:
-    """Optimise geometry and return total energy (eV)."""
-    atoms.constrain_xy()
-    atoms.calc = TBLite(method="GFN2-xTB", accuracy=1,
-                        charge=charge, multiplicity=multiplicity,
-                        solvation=("alpb", "water"), verbosity=0)
-    opt = (BFGS(atoms, trajectory=trajectory, logfile=logfile)
-           if (trajectory or logfile) else BFGS(atoms, logfile=None))
-    opt.run(fmax=fmax, steps=200)
-    return atoms.get_potential_energy()
-
-# ──────────────────────────────────────────────────────────────────────
-# 5.  Worker process (run in separate processes to parallelise)
-# ──────────────────────────────────────────────────────────────────────
-_CORNER_CHARGE = {"O": -1, "N": -2, "S": -1, "P": -2, "H": 0}
-
-def _build_name(sym1: str, ch1: int, sym2: str, ch2: int,
-                frame_key: str, spacer_key: str,
-                c1: str, c2: str) -> str:
-    """Return name: RMC-M1_q1-M2_q2-Frame-Spacer-NNNNXY"""
-    return (f"RMC-{sym1}_{ch1}-{sym2}_{ch2}-"
-            f"{frame_key}-{spacer_key}-NNNN{c1}{c2}")
-
-def worker(args) -> Optional[Tuple[str, float, int, Atoms,
-                                   float, float, int]]:
-    (m1, m2, corner, frame_key, spacer_key, S1_ref, S2_ref) = args
-
-    sym1, ch1 = m1
-    sym2, ch2 = m2
-    c1,  c2   = corner
+def worker(task):
+    (m1, m2, bridge, acid_key, base_key, S1_ref, S2_ref) = task
+    sym1, ch1 = m1; sym2, ch2 = m2; c1, c2 = bridge
 
     os.environ["OMP_NUM_THREADS"] = os.getenv("OMP_NUM_THREADS_PER_WORKER", "1")
-    logdir = os.getenv("ROBSON_LOGDIR", "robson_runs")
-    os.makedirs(logdir, exist_ok=True)
+    logdir = RUN_DIR  # reuse same directory
 
-    frame_fragment  = getattr(rob, frame_key)
-    spacer_fragment = getattr(rob, spacer_key)
+    acid_frag = getattr(rob, acid_key)
+    base_frag = getattr(rob, base_key)
+    tag = name_tag(sym1, ch1, sym2, ch2, acid_key, base_key, c1, c2)
 
-    base_name = _build_name(sym1, ch1, sym2, ch2,
-                            frame_key, spacer_key, c1, c2)
+    # Build site
+    if c1 is None:
+        site = rob.create_site_no_bridge(atom_0=sym1, atom_1=sym2)  # type: ignore[attr-defined]
+        charge = ch1 + ch2
+    else:
+        site = rob.create_site(atom_0=sym1, atom_1=sym2,
+                               atom_2=c1, atom_3=c2)  # type: ignore[attr-defined]
+        charge = ch1 + ch2 + _BRIDGE_CHARGE[c1] + _BRIDGE_CHARGE[c2]
 
-    # Assemble initial structure
-    site = rob.create_site(atom_0=sym1, atom_1=sym2,
-                           atom_2=c1,  atom_3=c2,
-                           corner_atom="N")
-    mol = rob.build_Robson(site,
-                           spacer_fragment.copy(),
-                           frame_fragment.copy(),
-                           x=6.0, y=5.0)
+    mol = rob.build_Robson(site, base_frag.copy(), acid_frag.copy(), x=6.0, y=5.0)
 
-    multiplicities = sorted({int(2*S + 1) for S in total_S_set(S1_ref, S2_ref)})
-    total_charge   = int(ch1 + ch2 + _CORNER_CHARGE[c1] + _CORNER_CHARGE[c2])
+    best_E = best_mult = None
+    best_mol = None
+    best_conv = False
 
-    best_energy = best_mult = best_mol = None
-    for mult in multiplicities:
+    for mult in sorted({int(2*S + 1) for S in total_S_set(S1_ref, S2_ref)}):
         trial = mol.copy()
         try:
-            E = optimise(trial,
-                         charge=total_charge,
-                         multiplicity=mult,
-                         fmax=0.01,
-                         trajectory=os.path.join(logdir, f"{base_name}_mult{mult}.traj"),
-                         logfile=os.path.join(logdir,  f"{base_name}_mult{mult}.log"))
+            opt = run_opt(trial,
+                          charge=int(charge), mult=mult,
+                          traj=str(logdir / f"{tag}_m{mult}.traj"),
+                          log=str(logdir / f"{tag}_m{mult}.log"))
         except Exception:
             continue
-        if best_energy is None or E < best_energy:
-            best_energy, best_mult, best_mol = E, mult, trial.copy()
 
-    if best_mult is None:
-        return None  # every multiplicity failed
+        E = trial.get_potential_energy()
+        if best_E is None or E < best_E:
+            best_E, best_mult, best_mol = E, mult, trial.copy()
+            best_conv = opt.converged()
 
-    return (base_name, best_energy, best_mult, best_mol,
-            S1_ref, S2_ref, total_charge)
+    if best_mol is None:              # every multiplicity crashed
+        return None
+
+    return tag, best_E, best_mult, best_mol, best_conv, float(S1_ref), float(S2_ref), int(charge)
 
 # ──────────────────────────────────────────────────────────────────────
 # 6.  Main driver
 # ──────────────────────────────────────────────────────────────────────
 
-def main(db_path: str = "robsonscatalyst.db") -> None:
-    spin_dict = load_spin_data()
-    metals    = list(spin_dict.keys())
+def main(db_file: str = "robson.db") -> None:
+    spin = load_spin_data()
+    metals = list(spin.keys())
 
-    CORNER_ATOMS = ["N", "O", "S", "P", "H"]
-    CORNERS      = list(combinations_with_replacement(CORNER_ATOMS, 2))
+    db = connect(db_file)
+    print("DB →", os.path.abspath(db_file), flush=True)
 
-    # Connect DB and cache existing names to skip duplicates
-    db       = connect(db_path)
-    existing = {row.name for row in db.select()}
+    in_db     = {row.name for row in db.select()}
+    ok_tags   = {p.stem for p in RUN_DIR.glob("*.ok")}
+    fail_tags = {p.stem for p in RUN_DIR.glob("*.fail")}
+    skip_set  = in_db | ok_tags | fail_tags
 
-    # Build raw task list
-    raw_tasks: List[Tuple] = []
-    for (m1, m2), corner, (frame_key, spacer_key) in product(
+    tasks = []
+    for (m1, m2), (acid, base) in product(
             combinations_with_replacement(metals, 2),
-            CORNERS,
-            product(FRAME_KEYS, SPACER_KEYS)):
-        S1 = float(spin_dict[m1][0])
-        S2 = float(spin_dict[m2][0])
-        raw_tasks.append((m1, m2, corner, frame_key, spacer_key, S1, S2))
+            product(ACID_KEYS, BASE_KEYS)):
+        for br in bridges_for(acid):
+            S1, S2 = map(float, (spin[m1][0], spin[m2][0]))
+            tag = name_tag(m1[0], m1[1], m2[0], m2[1], acid, base, br[0], br[1])
+            if tag not in skip_set:
+                tasks.append((m1, m2, br, acid, base, S1, S2))
 
-    # Filter already‑present entries
-    def _name_from_tuple(t: Tuple) -> str:
-        m1, m2, corner, frame_key, spacer_key, _, _ = t
-        return _build_name(m1[0], m1[1], m2[0], m2[1],
-                           frame_key, spacer_key,
-                           corner[0], corner[1])
+    n_workers = int(os.getenv("ROBSON_WORKERS", "1"))
+    print(f"Launching {len(tasks)} tasks on {n_workers} worker(s)…", flush=True)
 
-    tasks = [t for t in raw_tasks if _name_from_tuple(t) not in existing]
-
-    max_workers = int(os.getenv("ROBSON_WORKERS", "1"))
-    print(f"Running {len(tasks)} new tasks with {max_workers} worker(s)…", flush=True)
-
-    t0, done = time.time(), 0
-    with ProcessPoolExecutor(max_workers=max_workers) as pool:
-        futures = {pool.submit(worker, t): t for t in tasks}
-        for fut in as_completed(futures):
-            task_tuple = futures[fut]
-            name_hint  = _name_from_tuple(task_tuple)
+    t0 = time.time(); done = 0
+    with ProcessPoolExecutor(max_workers=n_workers) as pool:
+        for fut in as_completed({pool.submit(worker, t): t for t in tasks}):
             try:
-                result = fut.result()
+                res = fut.result()
             except Exception:
-                print(f"‼ Worker crashed for", {name_hint}, {format_exc()}, flush=True)
+                print("‼ Worker crashed\n" + format_exc(), flush=True)
+                continue
+            if res is None:
                 continue
 
-            if result is None:
-                print(f"⚠ Optimisation failed for {name_hint}", flush=True)
-                continue
+            tag, E, mult, mol, conv, S1, S2, ch = res
+            db.write(mol, name=tag, Energy=E, Multiplicity=mult,
+                     Spin1=S1, Spin2=S2, Charge=ch,
+                     username="balongn99")
 
-            name, E, mult, mol, S1, S2, charge = result
-            if name in existing:  # race‑condition guard
-                continue
-
-            n_atoms = len(mol)
-            mm_dist = mol.get_distance(0, 1)
-
-            db.write(
-                mol,
-                name=name,
-                Energy=E,
-                N_atoms=n_atoms,
-                Spin1=S1,
-                Spin2=S2,
-                Charge=charge,
-                Multiplicity=mult,
-                M_M_distance=mm_dist,
-                username='balongn99'
-            )
-            existing.add(name)
+            (RUN_DIR / f"{tag}{'.ok' if conv else '.fail'}").touch()
             done += 1
-            elapsed = (time.time() - t0) / 60
-            print(f"✔ {done}/{len(tasks)} {name} mult={mult} E={E:.2f} eV ({elapsed:.1f} min)", flush=True)
+            print(f"✔ {done}/{len(tasks)} {tag} mult={mult} E={E:.2f} eV "
+                  f"({'converged' if conv else 'non-conv'})", flush=True)
 
-    print(f"Finished: {done} structures written ({(time.time()-t0)/60:.1f} min total)")
+    print(f"✓ Finished {done} new structures in {(time.time()-t0)/60:.1f} min")
+
 
 if __name__ == "__main__":
     main()
-
