@@ -1,3 +1,4 @@
 *.out
 *.traj
 *.log
+*.fail
