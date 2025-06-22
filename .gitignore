@@ -2,3 +2,5 @@
 *.traj
 *.log
 *.fail
+*.bk
+*.ok

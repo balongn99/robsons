@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Mn_3-Nb_3-A2-B2-NNNNNN",
+  "energy_eV": -2985.1201635214966,
+  "multiplicity": 3,
+  "charge": 2,
+  "sym1": "Mn",
+  "ox1": 3,
+  "sym2": "Nb",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B2",
+  "bridge": [
+    "N",
+    "N"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 1.0
+}

@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Ni_2-Ni_2-A2-B1-NNNNOS",
+  "energy_eV": -2638.250830961361,
+  "multiplicity": 1,
+  "charge": 2,
+  "sym1": "Ni",
+  "ox1": 2,
+  "sym2": "Ni",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "O",
+    "S"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 0.0
+}

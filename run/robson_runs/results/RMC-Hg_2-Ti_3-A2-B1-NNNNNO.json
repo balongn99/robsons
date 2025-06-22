@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Hg_2-Ti_3-A2-B1-NNNNNO",
+  "energy_eV": -2432.4043230493153,
+  "multiplicity": 2,
+  "charge": 2,
+  "sym1": "Hg",
+  "ox1": 2,
+  "sym2": "Ti",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "N",
+    "O"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 0.5
+}

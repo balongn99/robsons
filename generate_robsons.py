@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Robson-cage generator
 
-* Enumerates every metal/acid/base/bridge combination.
-* Tries all reasonable multiplicities derived from the two metal spins.
-* **Always** writes the lowest-energy geometry to the database.
-    – adds a `<tag>.ok` sentinel when the optimiser **converged** (|F|max ≤ 0.01 eV/Å within 50 steps)
-    – adds a `<tag>.fail` sentinel when no multiplicity converged, but the
-      lowest-energy (non-converged) structure is still stored for inspection.
-"""
 from __future__ import annotations
 
 import importlib
@@ -75,8 +67,8 @@ def load_spin_data(module: str = "Spin") -> Dict[Tuple[str, int], List[float]]:
 # 2.  Bridges per acid
 # ──────────────────────────────────────────────────────────────────────
 NO_BRIDGE_ACIDS: set[str] = {"A3"}
-BRIDGE_ATOMS = ["N", "O", "S", "H"]
-_BRIDGE_CHARGE = {"O": -1, "N": -2, "S": -1, "H": 0}
+BRIDGE_ATOMS = ["N", "O", "S"]
+_BRIDGE_CHARGE = {"O": -1, "N": -2, "S": -1}
 
 def bridges_for(acid_key: str):
     return [(None, None)] if acid_key in NO_BRIDGE_ACIDS else \
@@ -86,12 +78,18 @@ def bridges_for(acid_key: str):
 # 3.  Geometry optimiser helper
 # ──────────────────────────────────────────────────────────────────────
 
-def _constrain_xy(self):
-    self.set_constraint([FixedPlane(i, (0, 0, 1)) for i, a in enumerate(self)
-                         if i not in (0, 1) and a.symbol != "H"])
+def _constrain_xy(self: Atoms):
+    self.set_constraint(
+        [
+            FixedPlane(i, (0, 0, 1))
+            for i, a in enumerate(self)
+            if i not in (0, 1)
+               and a.symbol != "H"
+               and -0.01 <= a.position[2] <= 0.01
+        ]
+    )
 
-Atoms.constrain_xy = _constrain_xy  # type: ignore[attr-defined]
-
+Atoms.constrain_xy = _constrain_xy
 
 def run_opt(atoms: Atoms, *, charge: int, mult: int,
             traj: str, log: str, fmax: float = 0.01, steps: int = 50):
@@ -126,13 +124,12 @@ def worker(task):
     sym1, ch1 = m1; sym2, ch2 = m2; c1, c2 = bridge
 
     os.environ["OMP_NUM_THREADS"] = os.getenv("OMP_NUM_THREADS_PER_WORKER", "1")
-    logdir = RUN_DIR  # reuse same directory
+    logdir = RUN_DIR
 
     acid_frag = getattr(rob, acid_key)
     base_frag = getattr(rob, base_key)
     tag = name_tag(sym1, ch1, sym2, ch2, acid_key, base_key, c1, c2)
 
-    # Build site
     if c1 is None:
         site = rob.create_site_no_bridge(atom_0=sym1, atom_1=sym2)  # type: ignore[attr-defined]
         charge = ch1 + ch2
@@ -141,11 +138,15 @@ def worker(task):
                                atom_2=c1, atom_3=c2)  # type: ignore[attr-defined]
         charge = ch1 + ch2 + _BRIDGE_CHARGE[c1] + _BRIDGE_CHARGE[c2]
 
-    mol = rob.build_Robson(site, base_frag.copy(), acid_frag.copy(), x=6.0, y=5.0)
+    mol = rob.build_Robson(site, base_frag.copy(), acid_frag.copy(), x=5.6, y=5)
 
+    # Track absolute best and best converged separately
     best_E = best_mult = None
     best_mol = None
-    best_conv = False
+
+    best_conv_E = best_conv_mult = None
+    best_conv_mult = None
+    best_conv_mol = None
 
     for mult in sorted({int(2*S + 1) for S in total_S_set(S1_ref, S2_ref)}):
         trial = mol.copy()
@@ -158,14 +159,26 @@ def worker(task):
             continue
 
         E = trial.get_potential_energy()
+
+        # Track lowest converged
+        if opt.converged():
+            if best_conv_E is None or E < best_conv_E:
+                best_conv_E, best_conv_mult, best_conv_mol = E, mult, trial.copy()
+
+        # Track absolute minimum (for .fail case)
         if best_E is None or E < best_E:
             best_E, best_mult, best_mol = E, mult, trial.copy()
-            best_conv = opt.converged()
 
-    if best_mol is None:              # every multiplicity crashed
+    # Nothing optimised successfully
+    if best_mol is None:
         return None
 
-    return tag, best_E, best_mult, best_mol, best_conv, float(S1_ref), float(S2_ref), int(charge)
+    if best_conv_E is not None:
+        return (tag, best_conv_E, best_conv_mult, best_conv_mol,
+                True, float(S1_ref), float(S2_ref), int(charge))
+    else:
+        return (tag, best_E, best_mult, best_mol,
+                False, float(S1_ref), float(S2_ref), int(charge))
 
 # ──────────────────────────────────────────────────────────────────────
 # 6.  Main driver
@@ -208,9 +221,8 @@ def main(db_file: str = "robson.db") -> None:
                 continue
 
             tag, E, mult, mol, conv, S1, S2, ch = res
-            db.write(mol, name=tag, Energy=E, Multiplicity=mult,
-                     Spin1=S1, Spin2=S2, Charge=ch,
-                     username="balongn99")
+            if conv:
+                db.write(mol, name=tag, Energy=E, Multiplicity=mult, Spin1=S1, Spin2=S2, Charge=ch, user="balongn99")
 
             (RUN_DIR / f"{tag}{'.ok' if conv else '.fail'}").touch()
             done += 1

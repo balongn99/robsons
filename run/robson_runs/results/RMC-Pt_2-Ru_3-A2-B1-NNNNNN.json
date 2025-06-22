@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Pt_2-Ru_3-A2-B1-NNNNNN",
+  "energy_eV": -2562.9160727034123,
+  "multiplicity": 2,
+  "charge": 1,
+  "sym1": "Pt",
+  "ox1": 2,
+  "sym2": "Ru",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "N",
+    "N"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 0.5
+}

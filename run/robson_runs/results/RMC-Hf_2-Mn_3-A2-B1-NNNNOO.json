@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Hf_2-Mn_3-A2-B1-NNNNOO",
+  "energy_eV": -2501.9461659758085,
+  "multiplicity": 3,
+  "charge": 3,
+  "sym1": "Hf",
+  "ox1": 2,
+  "sym2": "Mn",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "O",
+    "O"
+  ],
+  "S1_ref": 1.0,
+  "S2_ref": 0.0
+}

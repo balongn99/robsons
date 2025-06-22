@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Ga_3-Ga_3-A2-B2-NNNNOO",
+  "energy_eV": -2952.3255756112,
+  "multiplicity": 1,
+  "charge": 4,
+  "sym1": "Ga",
+  "ox1": 3,
+  "sym2": "Ga",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B2",
+  "bridge": [
+    "O",
+    "O"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.5
+}

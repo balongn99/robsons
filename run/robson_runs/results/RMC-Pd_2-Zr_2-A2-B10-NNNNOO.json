@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Pd_2-Zr_2-A2-B10-NNNNOO",
+  "energy_eV": -3318.023623664821,
+  "multiplicity": 3,
+  "charge": 2,
+  "sym1": "Pd",
+  "ox1": 2,
+  "sym2": "Zr",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B10",
+  "bridge": [
+    "O",
+    "O"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 1.0
+}

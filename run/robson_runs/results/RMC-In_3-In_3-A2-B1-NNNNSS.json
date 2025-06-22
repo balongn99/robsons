@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-In_3-In_3-A2-B1-NNNNSS",
+  "energy_eV": -2377.3349432077857,
+  "multiplicity": 1,
+  "charge": 4,
+  "sym1": "In",
+  "ox1": 3,
+  "sym2": "In",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.5
+}

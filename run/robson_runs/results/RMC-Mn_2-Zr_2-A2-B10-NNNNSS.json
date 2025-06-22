@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Mn_2-Zr_2-A2-B10-NNNNSS",
+  "energy_eV": -3225.2170569091368,
+  "multiplicity": 2,
+  "charge": 2,
+  "sym1": "Mn",
+  "ox1": 2,
+  "sym2": "Zr",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B10",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 1.0
+}

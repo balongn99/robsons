@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Re_2-W_2-A2-B1-NNNNNO",
+  "energy_eV": -2540.561114750395,
+  "multiplicity": 2,
+  "charge": 1,
+  "sym1": "Re",
+  "ox1": 2,
+  "sym2": "W",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "N",
+    "O"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.0
+}

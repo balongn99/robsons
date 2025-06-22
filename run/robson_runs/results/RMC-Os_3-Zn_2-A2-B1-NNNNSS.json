@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Os_3-Zn_2-A2-B1-NNNNSS",
+  "energy_eV": -2439.646253854269,
+  "multiplicity": 2,
+  "charge": 3,
+  "sym1": "Os",
+  "ox1": 3,
+  "sym2": "Zn",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.0
+}

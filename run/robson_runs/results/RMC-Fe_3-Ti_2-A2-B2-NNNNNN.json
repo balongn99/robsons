@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Fe_3-Ti_2-A2-B2-NNNNNN",
+  "energy_eV": -3000.484602943969,
+  "multiplicity": 4,
+  "charge": 1,
+  "sym1": "Fe",
+  "ox1": 3,
+  "sym2": "Ti",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B2",
+  "bridge": [
+    "N",
+    "N"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 1.0
+}

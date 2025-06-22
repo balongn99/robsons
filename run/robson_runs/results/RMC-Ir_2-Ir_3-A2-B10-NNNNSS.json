@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Ir_2-Ir_3-A2-B10-NNNNSS",
+  "energy_eV": -3298.7348750673214,
+  "multiplicity": 2,
+  "charge": 3,
+  "sym1": "Ir",
+  "ox1": 2,
+  "sym2": "Ir",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B10",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.0
+}

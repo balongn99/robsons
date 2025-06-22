@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Ni_3-Ta_3-A2-B1-NNNNNN",
+  "energy_eV": -2519.675598104351,
+  "multiplicity": 2,
+  "charge": 2,
+  "sym1": "Ni",
+  "ox1": 3,
+  "sym2": "Ta",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "N",
+    "N"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 1.0
+}

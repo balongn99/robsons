@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Os_3-Ru_3-A2-B1-NNNNOS",
+  "energy_eV": -2515.1819042159273,
+  "multiplicity": 1,
+  "charge": 4,
+  "sym1": "Os",
+  "ox1": 3,
+  "sym2": "Ru",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "O",
+    "S"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.5
+}

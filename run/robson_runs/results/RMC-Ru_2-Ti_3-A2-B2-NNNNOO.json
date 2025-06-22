@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Ru_2-Ti_3-A2-B2-NNNNOO",
+  "energy_eV": -3036.6901354443767,
+  "multiplicity": 2,
+  "charge": 3,
+  "sym1": "Ru",
+  "ox1": 2,
+  "sym2": "Ti",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B2",
+  "bridge": [
+    "O",
+    "O"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 0.5
+}

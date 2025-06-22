@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Fe_3-Ni_2-A2-B1-NNNNOS",
+  "energy_eV": -2576.529946703013,
+  "multiplicity": 2,
+  "charge": 3,
+  "sym1": "Fe",
+  "ox1": 3,
+  "sym2": "Ni",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "O",
+    "S"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.0
+}

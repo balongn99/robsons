@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Ta_3-Ta_3-A2-B1-NNNNNN",
+  "energy_eV": -2439.962135194676,
+  "multiplicity": 1,
+  "charge": 2,
+  "sym1": "Ta",
+  "ox1": 3,
+  "sym2": "Ta",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "N",
+    "N"
+  ],
+  "S1_ref": 1.0,
+  "S2_ref": 1.0
+}

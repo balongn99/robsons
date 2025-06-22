@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Mg_2-Pd_2-A2-B2-NNNNNN",
+  "energy_eV": -3020.3280983790455,
+  "multiplicity": 1,
+  "charge": 0,
+  "sym1": "Mg",
+  "ox1": 2,
+  "sym2": "Pd",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B2",
+  "bridge": [
+    "N",
+    "N"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 0.0
+}

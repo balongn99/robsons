@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Cr_3-V_3-A2-B1-NNNNNN",
+  "energy_eV": -2446.1919547667285,
+  "multiplicity": 4,
+  "charge": 2,
+  "sym1": "Cr",
+  "ox1": 3,
+  "sym2": "V",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "N",
+    "N"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 1.0
+}

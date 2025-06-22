@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Nb_3-Pt_2-A2-B7-NNNNSS",
+  "energy_eV": -2159.9995693970086,
+  "multiplicity": 3,
+  "charge": 3,
+  "sym1": "Nb",
+  "ox1": 3,
+  "sym2": "Pt",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B7",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 1.0,
+  "S2_ref": 0.0
+}

@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Mo_2-Y_3-A2-B1-NNNNSS",
+  "energy_eV": -2424.734825470574,
+  "multiplicity": 1,
+  "charge": 3,
+  "sym1": "Mo",
+  "ox1": 2,
+  "sym2": "Y",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 0.0
+}

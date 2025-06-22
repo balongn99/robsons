@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Fe_2-W_2-A2-B1-NNNNOS",
+  "energy_eV": -2529.944780285983,
+  "multiplicity": 1,
+  "charge": 2,
+  "sym1": "Fe",
+  "ox1": 2,
+  "sym2": "W",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "O",
+    "S"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 0.0
+}

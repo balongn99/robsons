@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Pb_2-Sn_2-A2-B10-NNNNSS",
+  "energy_eV": -3227.371838531821,
+  "multiplicity": 1,
+  "charge": 2,
+  "sym1": "Pb",
+  "ox1": 2,
+  "sym2": "Sn",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B10",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 0.0
+}

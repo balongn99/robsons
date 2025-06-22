@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Re_2-Re_3-A2-B10-NNNNSS",
+  "energy_eV": -3267.6963498735195,
+  "multiplicity": 2,
+  "charge": 3,
+  "sym1": "Re",
+  "ox1": 2,
+  "sym2": "Re",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B10",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.0
+}

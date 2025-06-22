@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Fe_3-Zr_2-A2-B1-NNNNSS",
+  "energy_eV": -2464.6637509486263,
+  "multiplicity": 2,
+  "charge": 3,
+  "sym1": "Fe",
+  "ox1": 3,
+  "sym2": "Zr",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 1.0
+}

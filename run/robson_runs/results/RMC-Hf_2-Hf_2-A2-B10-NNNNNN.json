@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Hf_2-Hf_2-A2-B10-NNNNNN",
+  "energy_eV": -3190.2596296465044,
+  "multiplicity": 1,
+  "charge": 0,
+  "sym1": "Hf",
+  "ox1": 2,
+  "sym2": "Hf",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B10",
+  "bridge": [
+    "N",
+    "N"
+  ],
+  "S1_ref": 1.0,
+  "S2_ref": 1.0
+}
