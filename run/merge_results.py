@@ -74,7 +74,6 @@ def main(run_dir: Path, db_path: Path):
         )
         added += 1
         existing.add(tag)
-
     print(f"✓  Added {added} new rows with geometries to {db_path}")
 
 # ───────────────────────────────────────────────────────────────

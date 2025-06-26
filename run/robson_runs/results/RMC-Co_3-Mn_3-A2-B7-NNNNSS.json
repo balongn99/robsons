@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Co_3-Mn_3-A2-B7-NNNNSS",
+  "energy_eV": -2141.5091611230687,
+  "multiplicity": 1,
+  "charge": 4,
+  "sym1": "Co",
+  "ox1": 3,
+  "sym2": "Mn",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B7",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 0.0
+}

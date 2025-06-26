@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Cr_3-Mn_2-A2-B10-NNNNOO",
+  "energy_eV": -3266.7288217017394,
+  "multiplicity": 1,
+  "charge": 3,
+  "sym1": "Cr",
+  "ox1": 3,
+  "sym2": "Mn",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B10",
+  "bridge": [
+    "O",
+    "O"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.5
+}

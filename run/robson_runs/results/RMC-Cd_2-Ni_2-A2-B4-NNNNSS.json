@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Cd_2-Ni_2-A2-B4-NNNNSS",
+  "energy_eV": -2030.6012142016589,
+  "multiplicity": 1,
+  "charge": 2,
+  "sym1": "Cd",
+  "ox1": 2,
+  "sym2": "Ni",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B4",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 0.0
+}

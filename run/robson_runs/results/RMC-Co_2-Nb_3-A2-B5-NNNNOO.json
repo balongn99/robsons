@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Co_2-Nb_3-A2-B5-NNNNOO",
+  "energy_eV": -2001.0205280186237,
+  "multiplicity": 2,
+  "charge": 3,
+  "sym1": "Co",
+  "ox1": 2,
+  "sym2": "Nb",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B5",
+  "bridge": [
+    "O",
+    "O"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 1.0
+}

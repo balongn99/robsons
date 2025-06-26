@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Ag_1-Pd_2-A2-B7-NNNNOS",
+  "energy_eV": -2268.558097358851,
+  "multiplicity": 1,
+  "charge": 1,
+  "sym1": "Ag",
+  "ox1": 1,
+  "sym2": "Pd",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B7",
+  "bridge": [
+    "O",
+    "S"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 0.0
+}

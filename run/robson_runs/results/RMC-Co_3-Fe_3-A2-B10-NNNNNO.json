@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Co_3-Fe_3-A2-B10-NNNNNO",
+  "energy_eV": -3286.7910580068565,
+  "multiplicity": 2,
+  "charge": 3,
+  "sym1": "Co",
+  "ox1": 3,
+  "sym2": "Fe",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B10",
+  "bridge": [
+    "N",
+    "O"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 0.5
+}

@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Cr_3-Ti_3-A2-B6-NNNNOS",
+  "energy_eV": -2146.5632761662114,
+  "multiplicity": 1,
+  "charge": 4,
+  "sym1": "Cr",
+  "ox1": 3,
+  "sym2": "Ti",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B6",
+  "bridge": [
+    "O",
+    "S"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.5
+}

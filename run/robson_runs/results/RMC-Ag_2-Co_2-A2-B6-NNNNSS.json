@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Ag_2-Co_2-A2-B6-NNNNSS",
+  "energy_eV": -2264.8516476486407,
+  "multiplicity": 3,
+  "charge": 2,
+  "sym1": "Ag",
+  "ox1": 2,
+  "sym2": "Co",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B6",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.5
+}

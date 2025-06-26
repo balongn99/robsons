@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Co_3-Ta_3-A2-B6-NNNNSS",
+  "energy_eV": -2174.2340633352,
+  "multiplicity": 3,
+  "charge": 4,
+  "sym1": "Co",
+  "ox1": 3,
+  "sym2": "Ta",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B6",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 1.0
+}

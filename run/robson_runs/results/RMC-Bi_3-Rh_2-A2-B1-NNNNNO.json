@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Bi_3-Rh_2-A2-B1-NNNNNO",
+  "energy_eV": -2542.7890436540706,
+  "multiplicity": 1,
+  "charge": 2,
+  "sym1": "Bi",
+  "ox1": 3,
+  "sym2": "Rh",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B1",
+  "bridge": [
+    "N",
+    "O"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.5
+}

@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Cu_2-Ru_3-A2-B4-NNNNOO",
+  "energy_eV": -2102.7031072489317,
+  "multiplicity": 1,
+  "charge": 3,
+  "sym1": "Cu",
+  "ox1": 2,
+  "sym2": "Ru",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B4",
+  "bridge": [
+    "O",
+    "O"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.5
+}

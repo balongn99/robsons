@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Au_3-Hf_2-A2-B7-NNNNSS",
+  "energy_eV": -2129.826210005988,
+  "multiplicity": 3,
+  "charge": 3,
+  "sym1": "Au",
+  "ox1": 3,
+  "sym2": "Hf",
+  "ox2": 2,
+  "acid": "A2",
+  "base": "B7",
+  "bridge": [
+    "S",
+    "S"
+  ],
+  "S1_ref": 0.0,
+  "S2_ref": 1.0
+}

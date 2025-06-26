@@ -1,0 +1,18 @@
+{
+  "tag": "RMC-Bi_3-Ni_3-A2-B7-NNNNNS",
+  "energy_eV": -2169.7330786423045,
+  "multiplicity": 1,
+  "charge": 3,
+  "sym1": "Bi",
+  "ox1": 3,
+  "sym2": "Ni",
+  "ox2": 3,
+  "acid": "A2",
+  "base": "B7",
+  "bridge": [
+    "N",
+    "S"
+  ],
+  "S1_ref": 0.5,
+  "S2_ref": 0.5
+}
