@@ -135,22 +135,6 @@ def worker(task):
 
             E, conv, fmax = trial.get_potential_energy(), opt.converged(), opt.fmax
 
-            # extra 50 steps if Fmax < 0.02 eV/Å and not yet converged
-            if (not conv) and fmax < 0.02:
-                try:
-                    opt2 = BFGS(
-                        trial,
-                        trajectory=str(RUN_DIR / f"{tag}_m{mult}.traj"),
-                        logfile   =str(RUN_DIR / f"{tag}_m{mult}.log"),
-                        restart=True,
-                        append_trajectory=True,
-                    )
-                    opt2.run(fmax=0.01, steps=50)          # add 50 steps
-                    E    = trial.get_potential_energy()
-                    conv = opt2.converged()
-                except Exception:
-                    pass
-
             better = (
                 best_E is None or
                 (conv and not best_conv) or
