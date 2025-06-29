@@ -7,6 +7,9 @@ from pathlib import Path
 from typing import List, Tuple, Optional, Any, Dict, Sequence
 
 import pandas as pd
+import numpy as np
+from numpy.linalg import norm
+from ase.units import _e
 from ase import Atoms
 from ase.constraints import FixedPlane
 from ase.optimize import BFGS
@@ -86,84 +89,148 @@ def name_tag(sym1: str, ch1: int, sym2: str, ch2: int,
     return f"RMC-{sym1}_{ch1}-{sym2}_{ch2}-{acid}-{base}{suf}"
 
 # ───── 5. core worker ─────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────
+def _finite(x):
+    """Return float(x) if finite, else None (keeps JSON valid)."""
+    try:
+        f = float(x)
+        return f if np.isfinite(f) else None
+    except Exception:
+        return None
+
+
 def worker(task):
-    """task = ((sym1,ch1),(sym2,ch2),(br1,br2),acid,base,S1,S2)"""
+    """
+    task = ( (sym1,ox1), (sym2,ox2), (br1,br2), acid, base, S1_ref, S2_ref )
+    """
     (m1, m2, bridge, acid, base, S1_ref, S2_ref) = task
-    sym1, ch1 = m1; sym2, ch2 = m2
+    sym1, ch1 = m1
+    sym2, ch2 = m2
     br1, br2  = bridge
+
     tag = name_tag(sym1, ch1, sym2, ch2, acid, base, br1, br2)
 
-    # lock file prevents duplicate work
+    # per-task lock
     lock = RUN_DIR / f"{tag}.lock"
     try:
         fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         os.close(fd)
     except FileExistsError:
-        return None
+        return None            # another process is on it
 
     try:
+        # limit BLAS threads inside the worker
         os.environ["OMP_NUM_THREADS"] = os.getenv("OMP_NUM_THREADS_PER_WORKER", "1")
 
         acid_frag = getattr(rob, acid)
         base_frag = getattr(rob, base)
 
         if br1 is None:
-            site = rob.create_site_no_bridge(atom_0=sym1, atom_1=sym2)  # type: ignore[attr-defined]
+            site   = rob.create_site_no_bridge(atom_0=sym1, atom_1=sym2)  # type: ignore
             charge = ch1 + ch2
         else:
-            site = rob.create_site(atom_0=sym1, atom_1=sym2,
-                                   atom_2=br1, atom_3=br2)              # type: ignore[attr-defined]
+            site   = rob.create_site(atom_0=sym1, atom_1=sym2,
+                                     atom_2=br1, atom_3=br2)              # type: ignore
             charge = ch1 + ch2 + _BRIDGE_CHARGE[br1] + _BRIDGE_CHARGE[br2]
 
-        mol = rob.build_Robson(site, base_frag.copy(), acid_frag.copy(),
-                               x=5.3, y=5.0)
+        mol = rob.build_Robson(site, base_frag.copy(), acid_frag.copy(), x=5.3, y=5.0)
 
         best_E = best_mult = None
         best_mol: Optional[Atoms] = None
         best_conv = False
+        best_props = {
+            "mulliken_q_e": [],
+            "dipole_vec_eA": [None, None, None],
+            "dipole_mag_D": None,
+            "solvation_E_eV": None,
+        }
 
-        # ─── scan multiplicities ────────────────────────────────────────
+        # ─── scan total-spin multiplicities ─────────────────────────
         for mult in sorted({int(2*S + 1) for S in total_S_set(S1_ref, S2_ref)}):
             trial = mol.copy()
             try:
                 opt = run_opt(trial,
-                              charge=int(charge), mult=mult,
+                              charge=int(charge),
+                              mult=mult,
                               traj=RUN_DIR / f"{tag}_m{mult}.traj",
                               log =RUN_DIR / f"{tag}_m{mult}.log")
             except Exception:
                 continue
 
-            E, conv, fmax = trial.get_potential_energy(), opt.converged(), opt.fmax
+            E    = _finite(trial.get_potential_energy())
+            conv = bool(opt.converged)
 
             better = (
-                best_E is None or
+                best_mol is None or
                 (conv and not best_conv) or
-                (conv == best_conv and E < best_E)
+                (conv == best_conv and (best_E is None or E < best_E))
             )
             if better:
-                best_E, best_mult, best_mol = E, mult, trial.copy()
-                best_conv = conv
+                best_E, best_mult, best_mol, best_conv = E, mult, trial.copy(), conv
 
-        # ─── write output & sentinel ────────────────────────────────────
-        sentinel = ".ok" if best_conv else ".fail"
+                # ── grab physical properties for the *new* best ─────
+                try:
+                    # Mulliken charges
+                    if hasattr(trial.calc, "get_atomic_charges"):
+                        q = trial.calc.get_atomic_charges()
+                    else:
+                        q = trial.calc.get_charges()
+                    best_props["mulliken_q_e"] = [_finite(x) for x in q]
 
-        if best_mol is None:
-            (RUN_DIR / f"{tag}{sentinel}").touch()
-            return tag, None, None, False
+                    # Dipole moment
+                    if hasattr(trial.calc, "get_dipole_moment"):
+                        dvec = trial.calc.get_dipole_moment()
+                    else:
+                        dvec = trial.calc.get_dipole()
+                    dvec = [_finite(v) for v in dvec]
+                    best_props["dipole_vec_eA"] = dvec
+                    if all(v is not None for v in dvec):
+                        best_props["dipole_mag_D"] = _finite(norm(dvec) * 4.80320427)
 
+                    # ensure PE done → ΔG_solv appears
+                    trial.calc.calculate(atoms=trial, properties=["gsolv_energy"]) 
+                    
+                    raw = (
+                        trial.calc.results.get("gsolv_energy")            # ≥ 0.5 wheels
+                        or trial.calc.results.get("energy_solvation")     # 2024-03..2024-08
+                        or trial.calc.results.get("energy_solvent_correction")  # 2023-12..02
+)
+                    
+                    if raw is not None:    
+                        ev  = raw * 27.211386 if abs(raw) < 5 else raw * 0.04336414
+                        best_props["solvation_E_eV"] = _finite(ev)
+                except Exception as err:
+                    print(f"⚠ [{tag}] property grab failed – {err}")
+
+        if best_mol is None:                   # optimisation totally failed
+            (RUN_DIR / f"{tag}.fail").touch()
+            return None
+
+        # trajectory of the winner
         write(RUN_DIR / f"{tag}.traj", best_mol)
+        sentinel = ".ok" if best_conv else ".fail"
         (RUN_DIR / f"{tag}{sentinel}").touch()
 
+        # ─── JSON metadata (converged only) ─────────────────────────
         if best_conv:
-            (RESULT_DIR / f"{tag}.json").write_text(json.dumps({
-                "tag": tag, "energy_eV": best_E, "multiplicity": best_mult,
-                "charge": charge,
-                "sym1": sym1, "ox1": ch1, "sym2": sym2, "ox2": ch2,
-                "acid": acid, "base": base, "bridge": [br1, br2],
-                "S1_ref": S1_ref, "S2_ref": S2_ref
-            }, indent=2))
+            meta = {
+                "tag": tag,
+                "energy_eV":      _finite(best_E),
+                "multiplicity":   int(best_mult),
+                "charge":         int(charge),
+                "sym1": sym1, "ox1": ch1,
+                "sym2": sym2, "ox2": ch2,
+                "acid": acid, "base": base,
+                "bridge": [br1, br2],
+                "S1_ref": S1_ref,
+                "S2_ref": S2_ref,
+                **best_props,      # merge in new properties
+            }
+            (RESULT_DIR / f"{tag}.json").write_text(json.dumps(meta, indent=2))
 
         return tag, best_E, best_mult, best_conv
+
     finally:
         lock.unlink(missing_ok=True)
 

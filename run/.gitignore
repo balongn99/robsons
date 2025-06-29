@@ -1,0 +1,7 @@
+*.out
+*.traj
+*.log
+*.fail
+*.bk
+*.ok
+*.lock
