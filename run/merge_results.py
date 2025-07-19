@@ -76,7 +76,11 @@ def main(run_dir: Path, db_path: Path):
             Multiplicity=int(meta.get("multiplicity", 0)),
             Charge=int(meta.get("charge_total", meta.get("charge", 0))),
             # ── legacy ID fields (keep if present) ───────────────
+            Metal1=meta.get("sym1"),
+            Oxidation1=meta.get("ox1"),
             Spin1=meta.get("S1_ref"),
+            Metal2=meta.get("sym2"),
+            Oxidation2=meta.get("ox2"),
             Spin2=meta.get("S2_ref"),
             Acid=meta.get("acid"),
             Base=meta.get("base"),
@@ -87,9 +91,9 @@ def main(run_dir: Path, db_path: Path):
             DipoleZ_eA=dz,
             Dipole_D=_finite(meta.get("dipole_mag_D")),
             MullikenJSON=json.dumps(meta.get("mulliken_q_e", [])),
-            HOMO_eV=_finite(meta.get("HOMO_eV")),
-            LUMO_eV=_finite(meta.get("LUMO_eV")),
-            Gap_eV=_finite(meta.get("gap_eV")),
+            HOMO_eV=_finite(meta.get("HOMO_eV")) or "-",
+            LUMO_eV=_finite(meta.get("LUMO_eV")) or "-",
+            Gap_eV=_finite(meta.get("gap_eV")) or "-",
             # user tag for provenance
             username="balongn99",
         )

@@ -15,7 +15,9 @@ from ase.constraints import FixedPlane
 from ase.optimize import BFGS
 from ase.io import write
 from tblite.ase import TBLite
-from ase.units import Hartree  # 1 Ha = 27.211 386 eV
+import tblite.interface as tb
+from ase.units import Bohr, Hartree   # 1 Bohr = 0.529177 Å ; 1 Ha = 27.211 386 eV
+
 
 # ───── 0. paths & fragment registry ───────────────────────────────────────
 RUN_DIR = Path(os.getenv("ROBSON_LOGDIR", "robson_runs"))
@@ -100,7 +102,47 @@ def _finite(x):
     except Exception:
         return None
 
+def frontier_orbitals(atoms, charge, multiplicity):
+    """
+    HOMO/SOMO = highest MO with occupation > 0.5 e⁻
+    LUMO      = next MO (index = homo_idx + 1)
 
+    Returns (HOMO_eV, LUMO_eV) or (None, None) on failure.
+    """
+    try:
+        # --- run a one-shot xTB single-point in native tblite ----------
+        numbers   = atoms.get_atomic_numbers()
+        positions = atoms.get_positions() / Bohr
+        uhf       = max(0, multiplicity - 1)
+
+        calc   = tb.Calculator("GFN2-xTB",
+                               numbers, positions,
+                               charge=float(charge),
+                               uhf=uhf)
+        result = calc.singlepoint()
+
+        eig = result["orbital-energies"]        # Hartree (np.ndarray)
+        occ = result["orbital-occupations"]     # fractional occupations
+
+        occ_arr = np.asarray(occ)
+        occ_idx = np.nonzero(occ_arr > 0.5)[0]  # “occupied” (>0.5 e⁻)
+
+        if occ_idx.size == 0:
+            return None, None                   # nothing satisfies >0.5
+
+        homo_idx = int(occ_idx[-1])             # highest such index
+        lumo_idx = homo_idx + 1                 # definition per request
+        if lumo_idx >= len(eig):                # no higher orbital exists
+            return float(eig[homo_idx] * Hartree), None
+
+        homo_e = float(eig[homo_idx] * Hartree)   # → eV
+        lumo_e = float(eig[lumo_idx] * Hartree)
+        return homo_e, lumo_e
+
+    except Exception as err:
+        print(f"⚠ frontier-orbitals failed – {err}")
+        return None, None
+        
 def worker(task):
     """
     task = ((sym1, ox1), (sym2, ox2), (br1, br2), acid, base, S1_ref, S2_ref)
@@ -190,14 +232,9 @@ def worker(task):
                     if all(v is not None for v in dvec):
                         best_props["dipole_mag_D"] = _finite(norm(dvec) * 4.80320427)
 
-                    # ── NEW: frontier orbitals ────────────────────
-                    trial.calc.calculate(atoms=trial)     # full single-point for orbitals
-                    eig = trial.calc.results.get("orbital-energies")         # Ha
-                    occ = trial.calc.results.get("orbital-occupations")      # 0/2
-                    if eig is not None and occ is not None:
-                        homo_idx = max(i for i, o in enumerate(occ) if o > 0.0)
-                        homo_e = eig[homo_idx]     * Hartree  # to eV
-                        lumo_e = eig[homo_idx + 1] * Hartree
+                    # ── NEW: frontier orbitals via tblite-python ──────
+                    homo_e, lumo_e = frontier_orbitals(trial, charge, mult)
+                    if homo_e is not None and lumo_e is not None:
                         best_props["HOMO_eV"] = _finite(homo_e)
                         best_props["LUMO_eV"] = _finite(lumo_e)
                         best_props["gap_eV"]  = _finite(lumo_e - homo_e)
