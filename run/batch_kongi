@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=robsons
+#SBATCH --job-name=kongi
 #SBATCH --nodes=1
 #SBATCH --ntasks=1            # 1 MPI task (we use Python multiprocessing)
 #SBATCH --cpus-per-task=32    # total cores on the node
 #SBATCH --mem=100G
 #SBATCH --time=168:00:00
-#SBATCH --output=robsons_%j.out
+#SBATCH --output=kongi_%j.out
 
 # ────────────────────────────────────────────────────────────────
 # 0.  Environment
@@ -13,9 +13,9 @@
 source /gpfs/helios/home/balong/miniconda3/etc/profile.d/conda.sh
 conda activate robsons
 
-export ROBSON_LOGDIR=$SLURM_SUBMIT_DIR/robson_runs         # change if needed
+export KONGI_LOGDIR=$SLURM_SUBMIT_DIR/kongi_runs         # change if needed
 export OMP_NUM_THREADS_PER_WORKER=1                        # xTB threads / opt
-export ROBSON_WORKERS=$SLURM_CPUS_PER_TASK                 # for legacy script
+export KONGI_WORKERS=$SLURM_CPUS_PER_TASK                 # for legacy script
 export OMP_NUM_THREADS=$OMP_NUM_THREADS_PER_WORKER         # hard cap for xTB
 
 # ────────────────────────────────────────────────────────────────
@@ -23,7 +23,7 @@ export OMP_NUM_THREADS=$OMP_NUM_THREADS_PER_WORKER         # hard cap for xTB
 # ────────────────────────────────────────────────────────────────
 TASKFILE=$SLURM_SUBMIT_DIR/tasklist.tsv.gz
 echo ">> Generating task list at $(date)"
-python make_tasklist.py -o "$TASKFILE" --run-dir "$ROBSON_LOGDIR"
+python make_tasklist.py -o "$TASKFILE" --run-dir "$KONGI_LOGDIR"
 echo ">> Task list ready: $(zcat "$TASKFILE" | wc -l) lines"
 
 # ────────────────────────────────────────────────────────────────
@@ -37,8 +37,8 @@ echo ">> Finished optimisation pool at $(date)"
 # ────────────────────────────────────────────────────────────────
 # 3.  Merge JSON → ASE database (optional but handy)
 # ────────────────────────────────────────────────────────────────
-echo ">> Merging results into robson.db"
-python merge_results.py --run-dir "$ROBSON_LOGDIR" --db robson.db
+echo ">> Merging results"
+python merge_results.py --run-dir "$KONGI_LOGDIR"
 echo ">> Done at $(date)"
 
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Predict wall-time for a Robson campaign.
+Predict wall-time for a Kongi campaign.
 
 Changes vs. v1
 --------------

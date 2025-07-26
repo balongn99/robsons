@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Real-time Robson run progress.
+Real-time Kongi run progress.
 
 Counts
 -------
@@ -13,7 +13,7 @@ PENDING    = TOTAL − (OK + FAIL + RUNNING)
 Usage
 -----
 $ python progress.py                         # default paths
-$ python progress.py --run-dir /scratch/robson_runs --task tasklist.tsv.gz
+$ python progress.py --run-dir /scratch/kongi_runs --task tasklist.tsv.gz
 $ watch -n 60 python progress.py             # live dashboard
 """
 
@@ -39,7 +39,7 @@ def main(run_dir: Path, taskfile: Path):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--run-dir", default="robson_runs", type=Path,
+    ap.add_argument("--run-dir", default="kongi_runs", type=Path,
                     help="directory containing *.ok / *.fail / *.lock")
     ap.add_argument("--task", default="tasklist.tsv.gz", type=Path,
                     help="compressed task list with all requested jobs")

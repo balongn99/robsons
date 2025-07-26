@@ -57,7 +57,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("-o", "--outfile", default="tasklist.tsv.gz", type=Path,
                     help="compressed TSV task list")
-    ap.add_argument("--run-dir", default=os.getenv("ROBSON_LOGDIR", "robson_runs"),
+    ap.add_argument("--run-dir", default=os.getenv("KONGI_LOGDIR", "kongi_runs"),
                     type=Path, help="directory containing *.ok / *.fail files")
     args = ap.parse_args()
     main(args.outfile, args.run_dir)

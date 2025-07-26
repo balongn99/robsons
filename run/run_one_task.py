@@ -20,14 +20,14 @@ from ase.units import Bohr, Hartree   # 1 Bohr = 0.529177 Å ; 1 Ha = 27.211 386
 
 
 # ───── 0. paths & fragment registry ───────────────────────────────────────
-RUN_DIR = Path(os.getenv("ROBSON_LOGDIR", "robson_runs"))
+RUN_DIR = Path(os.getenv("KONGI_LOGDIR", "kongi_runs"))
 RUN_DIR.mkdir(exist_ok=True)
 RESULT_DIR = RUN_DIR / "results"
 RESULT_DIR.mkdir(exist_ok=True)
 
-rob = importlib.import_module("Robsons")
-ACID_KEYS: List[str] = [k for k in rob._ACIDS if isinstance(k, str)]
-BASE_KEYS: List[str] = [k for k in rob._BASES if isinstance(k, str)]
+kon = importlib.import_module("Kongi")
+ACID_KEYS: List[str] = [k for k in kon._ACIDS if isinstance(k, str)]
+BASE_KEYS: List[str] = [k for k in kon._BASES if isinstance(k, str)]
 
 # ───── 1. spin data ───────────────────────────────────────────────────────
 def _as_list(x: Any) -> List[float]:
@@ -89,7 +89,7 @@ def total_S_set(S1: float, S2: float):
 def name_tag(sym1: str, ch1: int, sym2: str, ch2: int,
              acid: str, base: str, br1: Optional[str], br2: Optional[str]) -> str:
     suf = "-NNNN" if br1 is None else f"-NNNN{br1}{br2}"
-    return f"RMC-{sym1}_{ch1}-{sym2}_{ch2}-{acid}-{base}{suf}"
+    return f"KMC-{sym1}_{ch1}-{sym2}_{ch2}-{acid}-{base}{suf}"
 
 # ───── 5. core worker ─────────────────────────────────────────────────────
 # ─────────────────────────────────────────────────────────────────────────────
@@ -166,18 +166,18 @@ def worker(task):
         # limit BLAS threads inside the worker
         os.environ["OMP_NUM_THREADS"] = os.getenv("OMP_NUM_THREADS_PER_WORKER", "1")
 
-        acid_frag = getattr(rob, acid)
-        base_frag = getattr(rob, base)
+        acid_frag = getattr(kon, acid)
+        base_frag = getattr(kon, base)
 
         if br1 is None:
-            site   = rob.create_site_no_bridge(atom_0=sym1, atom_1=sym2)  # type: ignore
+            site   = kon.create_site_no_bridge(atom_0=sym1, atom_1=sym2)  # type: ignore
             charge = ch1 + ch2
         else:
-            site   = rob.create_site(atom_0=sym1, atom_1=sym2,
+            site   = kon.create_site(atom_0=sym1, atom_1=sym2,
                                      atom_2=br1, atom_3=br2)              # type: ignore
             charge = ch1 + ch2 + _BRIDGE_CHARGE[br1] + _BRIDGE_CHARGE[br2]
 
-        mol = rob.build_Robson(site, base_frag.copy(), acid_frag.copy(), x=5.3, y=5.0)
+        mol = kon.build_kongi(site, base_frag.copy(), acid_frag.copy(), x=5.3, y=5.0)
 
         best_E = best_mult = None
         best_mol: Optional[Atoms] = None

@@ -6,6 +6,7 @@ import argparse, json, math, os, sys
 from pathlib import Path
 from typing import Dict, Any
 
+import datetime
 import ase.io
 from ase import Atoms
 from ase.db import connect
@@ -107,16 +108,21 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Merge JSON results into ASE DB")
     ap.add_argument(
         "--run-dir",
-        default=os.getenv("ROBSON_LOGDIR", "robson_runs"),
+        default=os.getenv("KONGI_LOGDIR", "kongi_runs"),
         type=Path,
         help="root directory with *.traj and results/*.json",
     )
+    
+    today = datetime.date.today().strftime("%Y.%m.%d")
+    default_db_name = f"MolecularKongi_{today}.db"
+
     ap.add_argument(
         "--db",
-        default="robson.db",
+        default=default_db_name,
         type=Path,
         help="ASE SQLite database to update / create",
     )
+
     args = ap.parse_args()
     main(args.run_dir.resolve(), args.db.resolve())
 

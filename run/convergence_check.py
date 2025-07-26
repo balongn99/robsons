@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-convergence_check.py  –  classify failed Robson cages by closest F-max
+convergence_check.py  –  classify failed Kongi cages by closest F-max
 
 • Works with BFGS logs whose lines look like
       BFGS:  50 15:17:30   -2241.791524   0.144626
@@ -17,7 +17,7 @@ import os, sys, argparse, pandas as pd
 from tqdm import tqdm
 from collections import Counter
 
-RUN_DIR = Path(os.getenv("ROBSON_LOGDIR", "robson_runs"))
+RUN_DIR = Path(os.getenv("KONGI_LOGDIR", "kongi_runs"))
 CHUNK   = 8192
 F_NEAR  = 0.02
 F_FAR   = 0.10
